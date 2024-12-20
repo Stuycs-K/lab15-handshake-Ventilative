@@ -22,15 +22,8 @@
   =========================*/
 int server_setup() {
   mkfifo("serverPipe", 0666);
-  int fd = open("serverPipe", O_RDONLY);
-  int from_client;
-  while(1){
-    int bytesRead = read(fd, from_client, 4);
-    if (bytesRead > 0){
-      remove("serverPipe");
-      break;
-    }
-  }
+  int from_client = open("serverPipe", O_RDONLY);
+  remove("serverPipe");
   return from_client;
 }
 
@@ -45,7 +38,21 @@ int server_setup() {
   =========================*/
 int server_handshake(int *to_client) {
   int from_client = server_setup();
-  to_client = open(from_client, O_WRONLY);
+  if (read(from_client, to_client, 4) < 0) printf("Error line 41\n");
+  char str[512];
+  sprintf(str, "%d", *to_client);
+  printf("%s\n", str);
+  int downstream = open(str, O_WRONLY);
+  printf("DOWNSTREAM OPENED\n");
+  int ack = *to_client + 1;
+  write(downstream, &ack, 4);
+  //
+  //
+  // int * finalAck;
+  // read(from_client, finalAck, 4);
+  // if (*finalAck == ack - 2){
+  //   printf("Done\n");
+  // }
   return from_client;
 }
 
@@ -60,12 +67,23 @@ int server_handshake(int *to_client) {
   returns the file descriptor for the downstream pipe.
   =========================*/
 int client_handshake(int *to_server) {
-  mkfifo(68743496, 0666);
+
+  char str[512];
+  int pid = getpid();
+  sprintf(str, "%d", pid);
+  printf("My pid is %s\n", str);
+  mkfifo(str, 0666);
   int fd = open("serverPipe", O_WRONLY);
-  write(68743496, fd, 4);
-  int pfd = open(68743496, O_RDONLY);
-  int from_server;
-  to_server = server_handshake(from_server);
+  write(fd, &pid, 4);
+  int from_server = open(str, O_RDONLY);
+  printf("FROM SERVER CONNECTED\n");
+  remove(str);
+  int * ack;
+  if (read(from_server, ack, 4) < 0) printf("%s\n", strerror(errno));
+  printf("received ack %d\n", *ack);
+  // if (*ack == pid + 1){
+  //   write(fd, pid-1, 4);
+  // }
   return from_server;
 }
 
