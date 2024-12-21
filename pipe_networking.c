@@ -38,7 +38,7 @@ int server_setup() {
   =========================*/
 int server_handshake(int *to_client) {
   int from_client = server_setup();
-  if (read(from_client, to_client, 4) < 0) printf("Error line 41\n");
+  read(from_client, to_client, 4);
   char str[512];
   sprintf(str, "%d", *to_client);
   printf("%s\n", str);
@@ -46,13 +46,11 @@ int server_handshake(int *to_client) {
   printf("DOWNSTREAM OPENED\n");
   int ack = *to_client + 1;
   write(downstream, &ack, 4);
-  //
-  //
-  // int * finalAck;
-  // read(from_client, finalAck, 4);
-  // if (*finalAck == ack - 2){
-  //   printf("Done\n");
-  // }
+  int finalAck;
+  read(from_client, &finalAck, 4);
+  if (finalAck == ack - 2){
+    printf("Done\n");
+  }
   return from_client;
 }
 
@@ -67,7 +65,6 @@ int server_handshake(int *to_client) {
   returns the file descriptor for the downstream pipe.
   =========================*/
 int client_handshake(int *to_server) {
-
   char str[512];
   int pid = getpid();
   sprintf(str, "%d", pid);
@@ -78,12 +75,13 @@ int client_handshake(int *to_server) {
   int from_server = open(str, O_RDONLY);
   printf("FROM SERVER CONNECTED\n");
   remove(str);
-  int * ack;
-  if (read(from_server, ack, 4) < 0) printf("%s\n", strerror(errno));
-  printf("received ack %d\n", *ack);
-  // if (*ack == pid + 1){
-  //   write(fd, pid-1, 4);
-  // }
+  int ack;
+  if (read(from_server, &ack, 4) < 0) printf("%s\n", strerror(errno));
+  printf("received ack %d\n", ack);
+  if (ack == pid + 1){
+    pid -= 1;
+    write(fd, &pid, 4);
+  }
   return from_server;
 }
 
