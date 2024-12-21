@@ -41,7 +41,7 @@ int server_handshake(int *to_client) {
   read(from_client, to_client, 4);
   char str[512];
   sprintf(str, "%d", *to_client);
-  printf("%s\n", str);
+  printf("received %s\n", str);
   int downstream = open(str, O_WRONLY);
   printf("DOWNSTREAM OPENED\n");
   int ack = *to_client + 1;
@@ -49,7 +49,7 @@ int server_handshake(int *to_client) {
   int finalAck;
   read(from_client, &finalAck, 4);
   if (finalAck == ack - 2){
-    printf("Done\n");
+    printf("Connection established.\n");
   }
   return from_client;
 }
@@ -79,6 +79,7 @@ int client_handshake(int *to_server) {
   if (read(from_server, &ack, 4) < 0) printf("%s\n", strerror(errno));
   printf("received ack %d\n", ack);
   if (ack == pid + 1){
+    printf("Ack Passed\n");
     pid -= 1;
     write(fd, &pid, 4);
   }
