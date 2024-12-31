@@ -6,4 +6,9 @@ int main() {
   int from_server;
 
   from_server = client_handshake( &to_server );
+  int heresAnInt = 1234543;
+  write(to_server, &heresAnInt, 4);
+  int buff;
+  read(from_server, &buff, 4);
+  printf("%d\n", buff);
 }

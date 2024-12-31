@@ -42,10 +42,10 @@ int server_handshake(int *to_client) {
   char str[512];
   sprintf(str, "%d", *to_client);
   printf("received %s\n", str);
-  int downstream = open(str, O_WRONLY);
-  printf("DOWNSTREAM OPENED\n");
   int ack = *to_client + 1;
-  write(downstream, &ack, 4);
+  *to_client = open(str, O_WRONLY);
+  printf("DOWNSTREAM OPENED\n");
+  write(*to_client, &ack, 4);
   int finalAck;
   read(from_client, &finalAck, 4);
   if (finalAck == ack - 2){
@@ -70,8 +70,8 @@ int client_handshake(int *to_server) {
   sprintf(str, "%d", pid);
   printf("My pid is %s\n", str);
   mkfifo(str, 0666);
-  int fd = open("serverPipe", O_WRONLY);
-  write(fd, &pid, 4);
+  *to_server = open("serverPipe", O_WRONLY);
+  write(*to_server, &pid, 4);
   int from_server = open(str, O_RDONLY);
   printf("FROM SERVER CONNECTED\n");
   remove(str);
@@ -81,7 +81,7 @@ int client_handshake(int *to_server) {
   if (ack == pid + 1){
     printf("Ack Passed\n");
     pid -= 1;
-    write(fd, &pid, 4);
+    write(*to_server, &pid, 4);
   }
   return from_server;
 }
