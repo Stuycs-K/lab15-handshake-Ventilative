@@ -1,12 +1,5 @@
 #include "pipe_networking.h"
 
-void sighandler(int signo){
-    remove("serverPipe");
-    exit(0);
-}
-void plumber(int signo){
-    printf("client left.\n");
-}
 int main() {
   signal(SIGINT, sighandler);
   signal(SIGPIPE, plumber);
@@ -24,11 +17,10 @@ int main() {
         if (heresAnInt < 0) heresAnInt *= -1;
         heresAnInt %= 101;
         int bytes = write(to_client, &heresAnInt, 4);
-        printf("%d\n", bytes);
         sleep(1);
         if (bytes == -1) break;
     }
-    printf("aborting\n");
+    printf("aborting old pipes.\n");
     close(to_client);
     close(from_client);
   }

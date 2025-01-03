@@ -10,6 +10,24 @@
 #include <errno.h>
 #include <signal.h>
 
+int rand(){
+  int heresAnInt = -1;
+  int rand = open("/dev/random", O_RDONLY);
+  read(rand, &heresAnInt, 4);
+  if (heresAnInt < 0) heresAnInt *= -1;
+  heresAnInt %= 101;
+  return heresAnInt;
+}
+
+void sighandler(int signo){
+    remove("serverPipe");
+    exit(0);
+}
+
+void plumber(int signo){
+    printf("client left.\n");
+}
+
 //UPSTREAM = to the server / from the client
 //DOWNSTREAM = to the client / from the server
 /*=========================
@@ -86,16 +104,34 @@ int client_handshake(int *to_server) {
   return from_server;
 }
 
-
-/*=========================
-  server_connect
-  args: int from_client
-
-  handles the subserver portion of the 3 way handshake
-
-  returns the file descriptor for the downstream pipe.
-  =========================*/
-int server_connect(int from_client) {
-  int to_client  = 0;
-  return to_client;
+void server_handshake_half(int *to_client, int from_client){
+  from_client = server_setup();
+  int childID = fork();
+  if (childID == 0){
+    signal(SIGPIPE, plumber);
+    read(from_client, to_client, 4);
+    char str[512];
+    sprintf(str, "%d", *to_client);
+    printf("%s received\n", str);
+    int ack = *to_client + 1;
+    *to_client = open(str, O_WRONLY);
+    write(*to_client, &ack, 4);
+    int finalAck;
+    read(from_client, &finalAck, 4);
+    if (finalAck != ack - 2){
+      printf("Ack incorrect.");
+      exit(0);
+    }
+    else{
+      int heresAnInt = -1;
+      while(1){
+          heresAnInt = rand();
+          int bytes = write(*to_client, &heresAnInt, 4);
+          sleep(1);
+          if (bytes == -1) break;
+      }
+      close(*to_client);
+      close(from_client);
+    }
+  }
 }
